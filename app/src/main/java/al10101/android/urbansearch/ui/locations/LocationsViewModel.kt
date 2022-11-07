@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 class LocationsViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
-        value = "This is home Fragment"
+        value = "No locations saved yet"
     }
     val text: LiveData<String> = _text
 }
