@@ -7,7 +7,8 @@ import androidx.lifecycle.ViewModel
 class LocationsViewModel : ViewModel() {
 
     private val _text = MutableLiveData<String>().apply {
-        value = "No locations saved yet"
+        value = "Not available yet"
     }
     val text: LiveData<String> = _text
+
 }
