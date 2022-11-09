@@ -19,6 +19,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -66,18 +67,15 @@ open class MapFragment : Fragment(),
         _binding = FragmentMapBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            val permission = checkUserLocationPermission()
+            Log.d(MAP_TAG, "onCreateView() -> Permission $permission")
+        }
+
         val mapFragment: SupportMapFragment = childFragmentManager.findFragmentById(R.id.google_maps) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         return root
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-        val permissionGranted = checkUserLocationPermission()
-        Log.d(MAP_TAG, "onViewCreated() -> Permission $permissionGranted")
-
     }
 
     override fun onDestroyView() {
@@ -95,8 +93,7 @@ open class MapFragment : Fragment(),
         mMap = googleMap
 
         if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
+                requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
 
@@ -174,7 +171,6 @@ open class MapFragment : Fragment(),
         googleApiClientSet = true
         Log.d(MAP_TAG, "GoogleApiClient defined")
         googleApiClient.connect()
-
     }
 
     override fun onConnected(p0: Bundle?) {
@@ -184,6 +180,7 @@ open class MapFragment : Fragment(),
         locationRequest = LocationRequest()
         locationRequest.interval = 1100 // milliseconds
         locationRequest.fastestInterval = 1100 // milliseconds
+        // PRIORITY_HIGH_ACCURACY OR PRIORITY_BALANCED_POWER_ACCURACY
         locationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
 
         if (ContextCompat.checkSelfPermission(
@@ -191,12 +188,10 @@ open class MapFragment : Fragment(),
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            if (googleApiClientSet) {
-                LocationServices.FusedLocationApi.requestLocationUpdates(
-                    googleApiClient, locationRequest, this
-                )
-                Log.d(MAP_TAG, "onConnected() -> requestLocationUpdates() just called")
-            }
+            LocationServices.FusedLocationApi.requestLocationUpdates(
+                googleApiClient, locationRequest, this
+            )
+            Log.d(MAP_TAG, "onConnected() -> requestLocationUpdates() just called")
         } else {
             Log.d(MAP_TAG, "onConnected() -> Permissions not granted")
         }
@@ -229,8 +224,7 @@ open class MapFragment : Fragment(),
         // Reset the current marker, define as the new defined location and move the camera
         currentUserLocationMarker?.remove()
         currentUserLocationMarker = mMap.addMarker(markerOptions)
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng))
-        mMap.animateCamera(CameraUpdateFactory.zoomBy(14f)) // The larger, the further
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f)) // The larger, the further
 
         // Stop the location update
         if (googleApiClientSet) {
