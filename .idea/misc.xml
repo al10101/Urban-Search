@@ -5,6 +5,7 @@
       <map>
         <entry key="app/src/main/res/drawable/ic_home_black_24dp.xml" value="0.2609375" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.19202898550724637" />
+        <entry key="app/src/main/res/layout/dialog_loading.xml" value="0.33" />
         <entry key="app/src/main/res/layout/fragment_home.xml" value="0.18704710144927536" />
         <entry key="app/src/main/res/layout/fragment_locations.xml" value="0.1" />
         <entry key="app/src/main/res/layout/fragment_map.xml" value="0.18704710144927536" />

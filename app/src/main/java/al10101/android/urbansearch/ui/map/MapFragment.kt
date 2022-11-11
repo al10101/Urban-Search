@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import al10101.android.urbansearch.databinding.FragmentMapBinding
+import al10101.android.urbansearch.ui.LoadingDialog
 import android.Manifest
 import android.content.pm.PackageManager
 import android.location.Location
@@ -45,9 +46,14 @@ open class MapFragment : Fragment(),
     private lateinit var mapViewModel: MapViewModel
     private var _binding: FragmentMapBinding? = null
 
+    private lateinit var loadingDialog: LoadingDialog
+    private var dialogSet = false
+
     private lateinit var mMap: GoogleMap
+
     private lateinit var googleApiClient: GoogleApiClient
     private var googleApiClientSet = false
+
     private lateinit var locationRequest: LocationRequest
     private lateinit var lastLocation: Location
     private var currentUserLocationMarker: Marker? = null
@@ -66,6 +72,10 @@ open class MapFragment : Fragment(),
 
         _binding = FragmentMapBinding.inflate(inflater, container, false)
         val root: View = binding.root
+
+        loadingDialog = LoadingDialog(requireContext())
+        loadingDialog.show( getString(R.string.title_loading) )
+        dialogSet = true
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val permission = checkUserLocationPermission()
@@ -207,6 +217,11 @@ open class MapFragment : Fragment(),
     }
 
     override fun onLocationChanged(location: Location) {
+
+        if (dialogSet) {
+            dialogSet = false
+            loadingDialog.hide()
+        }
 
         // Retrieve latitude and longitude from current location
         lastLocation = location
