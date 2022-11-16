@@ -11,6 +11,7 @@ import al10101.android.urbansearch.databinding.FragmentMapBinding
 import al10101.android.urbansearch.ui.LoadingDialog
 import android.Manifest
 import android.content.pm.PackageManager
+import android.content.res.Resources
 import android.location.Location
 import android.os.Build
 import android.util.Log
@@ -31,6 +32,8 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
 import java.util.*
+
+import com.google.android.gms.maps.model.MapStyleOptions
 
 private const val TAG = "MapTag"
 
@@ -136,6 +139,21 @@ open class MapFragment : Fragment(),
 
         mMap = googleMap
 
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            val success = googleMap.setMapStyle(
+                MapStyleOptions.loadRawResourceStyle(
+                    requireContext(), R.raw.style_json
+                )
+            )
+            if (!success) {
+                Log.e(TAG, "Style parsing failed.")
+            }
+        } catch (e: Resources.NotFoundException) {
+            Log.e(TAG, "Can't find style. Error: ", e)
+        }
+
         if (ContextCompat.checkSelfPermission(
                 requireContext(), Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
@@ -224,6 +242,7 @@ open class MapFragment : Fragment(),
         locationRequest = LocationRequest()
         locationRequest.interval = 1100 // milliseconds
         locationRequest.fastestInterval = 1100 // milliseconds
+        locationRequest.smallestDisplacement = 5f // meters
         // PRIORITY_HIGH_ACCURACY or PRIORITY_BALANCED_POWER_ACCURACY
         locationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
 
@@ -265,7 +284,7 @@ open class MapFragment : Fragment(),
         Log.d(TAG, "storeCurrentLocation() -> Lat: ${latLng.latitude}  Lng: ${latLng.longitude}")
 
         // Move the camera to the current location
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f)) // The larger, the further
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f)) // The larger, the nearer
 
     }
 
