@@ -4,4 +4,9 @@
     <string name="title_map">Map</string>
     <!--string name="title_notifications">Notifications</string-->
     <string name="title_loading">Loading…</string>
+    <string name="store_location_button">Store Current Location</string>
+    <string name="empty_list_text_view">
+        The are no locations stored yet. To define new locations, go to the
+        map section and press the button Store Current Location
+    </string>
 </resources>

@@ -20,7 +20,6 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.LocationListener
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.api.GoogleApiClient
-import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -31,8 +30,9 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.Marker
 import com.google.android.gms.maps.model.MarkerOptions
+import java.util.*
 
-private const val MAP_TAG = "MapTag"
+private const val TAG = "MapTag"
 
 private const val REQUEST_USER_LOCATION_CODE = 99
 
@@ -73,19 +73,53 @@ open class MapFragment : Fragment(),
         _binding = FragmentMapBinding.inflate(inflater, container, false)
         val root: View = binding.root
 
+        binding.storeLocationButton.isEnabled = false
+        binding.storeLocationButton.setOnClickListener {
+            storeCurrentLocation()
+        }
+
         loadingDialog = LoadingDialog(requireContext())
         loadingDialog.show( getString(R.string.title_loading) )
         dialogSet = true
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val permission = checkUserLocationPermission()
-            Log.d(MAP_TAG, "onCreateView() -> Permission $permission")
+            Log.d(TAG, "onCreateView() -> Permission $permission")
         }
 
         val mapFragment: SupportMapFragment = childFragmentManager.findFragmentById(R.id.google_maps) as SupportMapFragment
         mapFragment.getMapAsync(this)
 
         return root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        mapViewModel.locationListLiveData.observe(
+            viewLifecycleOwner,
+            { locations ->
+                locations?.let {
+                    Log.i(TAG, "Got locations ${locations.size}")
+                    updateMarkers(locations)
+                }
+            }
+        )
+    }
+
+    private fun updateMarkers(locations: List<al10101.android.urbansearch.Location>) {
+
+        locations.forEach { location ->
+
+            val latLng = LatLng(location.latitude, location.longitude)
+            val markerOptions = MarkerOptions().apply {
+                position(latLng)
+                title(location.date.toString())
+                icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET))
+            }
+            mMap.addMarker(markerOptions)
+
+        }
+
     }
 
     override fun onDestroyView() {
@@ -112,7 +146,7 @@ open class MapFragment : Fragment(),
             mMap.isMyLocationEnabled = true
 
         } else {
-            Log.d(MAP_TAG, "onMapReady() -> Permissions not granted")
+            Log.d(TAG, "onMapReady() -> Permissions not granted")
         }
 
     }
@@ -179,7 +213,7 @@ open class MapFragment : Fragment(),
             .addApi(LocationServices.API)
             .build()
         googleApiClientSet = true
-        Log.d(MAP_TAG, "GoogleApiClient defined")
+        Log.d(TAG, "GoogleApiClient defined")
         googleApiClient.connect()
     }
 
@@ -190,7 +224,7 @@ open class MapFragment : Fragment(),
         locationRequest = LocationRequest()
         locationRequest.interval = 1100 // milliseconds
         locationRequest.fastestInterval = 1100 // milliseconds
-        // PRIORITY_HIGH_ACCURACY OR PRIORITY_BALANCED_POWER_ACCURACY
+        // PRIORITY_HIGH_ACCURACY or PRIORITY_BALANCED_POWER_ACCURACY
         locationRequest.priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY
 
         if (ContextCompat.checkSelfPermission(
@@ -201,9 +235,9 @@ open class MapFragment : Fragment(),
             LocationServices.FusedLocationApi.requestLocationUpdates(
                 googleApiClient, locationRequest, this
             )
-            Log.d(MAP_TAG, "onConnected() -> requestLocationUpdates() just called")
+            Log.d(TAG, "onConnected() -> requestLocationUpdates() just called")
         } else {
-            Log.d(MAP_TAG, "onConnected() -> Permissions not granted")
+            Log.d(TAG, "onConnected() -> Permissions not granted")
         }
 
     }
@@ -221,13 +255,25 @@ open class MapFragment : Fragment(),
         if (dialogSet) {
             dialogSet = false
             loadingDialog.hide()
+            binding.storeLocationButton.isEnabled = true
         }
 
         // Retrieve latitude and longitude from current location
         lastLocation = location
-        val latLng = LatLng(location.latitude, location.longitude)
+        val latLng = LatLng(lastLocation.latitude, lastLocation.longitude)
 
-        Log.d(MAP_TAG, "Lat: ${latLng.latitude}  Lng: ${latLng.longitude}")
+        Log.d(TAG, "storeCurrentLocation() -> Lat: ${latLng.latitude}  Lng: ${latLng.longitude}")
+
+        // Move the camera to the current location
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f)) // The larger, the further
+
+    }
+
+    private fun storeCurrentLocation() {
+
+        val latLng = LatLng(lastLocation.latitude, lastLocation.longitude)
+
+        Log.d(TAG, "storeCurrentLocation() -> Lat: ${latLng.latitude}  Lng: ${latLng.longitude}")
 
         // Define the marker
         val markerOptions = MarkerOptions().apply {
@@ -236,10 +282,18 @@ open class MapFragment : Fragment(),
             icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_VIOLET))
         }
 
-        // Reset the current marker, define as the new defined location and move the camera
+        // Reset the current marker, define as the new defined location. We do not move the camera this
+        // time because it must be the same as the last current location
         currentUserLocationMarker?.remove()
         currentUserLocationMarker = mMap.addMarker(markerOptions)
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 16f)) // The larger, the further
+
+        // Store location
+        val location = al10101.android.urbansearch.Location(
+            title = "Lat= ${latLng.latitude}  Lng= ${latLng.longitude}",
+            latitude = latLng.latitude,
+            longitude = latLng.longitude
+        )
+        mapViewModel.saveLocation(location)
 
         // Stop the location update
         if (googleApiClientSet) {

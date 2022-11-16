@@ -20,6 +20,7 @@ class LoadingDialog(context: Context) {
         titleTextView.text = title
 
         dialog.create()
+        dialog.setCanceledOnTouchOutside(false)
         dialog.show()
 
     }
