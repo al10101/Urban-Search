@@ -27,13 +27,8 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.OnMapReadyCallback
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.LatLng
-import com.google.android.gms.maps.model.Marker
-import com.google.android.gms.maps.model.MarkerOptions
+import com.google.android.gms.maps.model.*
 import java.util.*
-
-import com.google.android.gms.maps.model.MapStyleOptions
 
 private const val TAG = "MapTag"
 
@@ -138,6 +133,9 @@ open class MapFragment : Fragment(),
     override fun onMapReady(googleMap: GoogleMap) {
 
         mMap = googleMap
+
+        // PokemonGo style
+        mMap.uiSettings.isCompassEnabled = false
 
         try {
             // Customise the styling of the base map using a JSON object defined
@@ -283,8 +281,14 @@ open class MapFragment : Fragment(),
 
         Log.d(TAG, "storeCurrentLocation() -> Lat: ${latLng.latitude}  Lng: ${latLng.longitude}")
 
-        // Move the camera to the current location
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 18f)) // The larger, the nearer
+        // Move the camera to the current location, PokemonGo style
+        val cameraPosition = CameraPosition.Builder()
+            .target(latLng)
+            .zoom(18f) // The larger, the nearer
+            .tilt(67.5f)
+            .bearing(314f)
+            .build()
+        mMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition))
 
     }
 
